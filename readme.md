@@ -1,6 +1,5 @@
-Here you go—cleanly organized to match the exact checklist format you gave me.
 
-# Problem Definition: Identify a problem and motivate the need for a solution.
+# Problem Definition:
 
 ✅ **Problem**
 Detect **fraudulent transactions** in AMLSim logs while revealing *how* they occur via **8 laundering motifs** (fan-out, fan-in, scatter-gather, gather-scatter, simple cycle, random walk, bipartite, stack). Each transaction should receive (i) a **fraud score** and (ii) an **8-dimensional motif-proximity signature** for interpretability.
@@ -10,7 +9,7 @@ Traditional anomaly detectors focus on isolated edges and miss **structural, tim
 
 ---
 
-# Methods: Present proposed solutions including specific data processing methods and machine learning algorithms, and why they’ll be effective.
+# Methods:
 
 ✅ **3+ Data Preprocessing Methods Identified**
 
@@ -19,7 +18,7 @@ Traditional anomaly detectors focus on isolated edges and miss **structural, tim
 3. **Feature engineering:**
 
    * Topology/role stats (in/out-degree, unique counterparties, entropy), temporal gaps/burstiness, short cycles, fan ratios, path-continuation likelihood.
-   * **Aux categorical encoding** (credit-card/reinvestment) via one-hot or target encoding with smoothing.
+   * **Aux categorical encoding** (credit-card/reinvestment) via NLP embeddinga.
 4. **Scaling & regularization:** Standardize continuous features (e.g., `sklearn.preprocessing.StandardScaler`), shrinkage on covariance for distance models.
 5. **Class imbalance handling:** weighted loss or focal loss; stratified time splits.
 
@@ -37,16 +36,6 @@ Traditional anomaly detectors focus on isolated edges and miss **structural, tim
 
   * **GNN baselines** for edge classification with temporal context: GraphSAGE/GIN; **temporal GNNs** (TGAT/TGN). (`pyg`/PyTorch Geometric: `torch_geometric.nn.SAGEConv`, `GINConv`; TGAT/TGN implementations)
 
-✅ **CS 7641: Unsupervised and Supervised Learning Methods Identified**
-
-* **Unsupervised:** K-Means, GMM, prototype‐distance embedding + softmax, (optional) Isolation Forest for anomaly contrast.
-* **Supervised:** Logistic Regression (calibrated), Gradient-Boosted Trees, GNN edge classification.
-
-✅ **CS 4641: Supervised or Unsupervised Learning Methods Identified (Supervised recommended)**
-
-* **Supervised (recommended):** Logistic Regression / GBDT w/ motif features; GNN baseline.
-* **Unsupervised (alternate):** K-Means/GMM to discover motif clusters and derive distance signatures.
-
 **Why this is effective**
 
 * **Structure-aware:** Graph+temporal features capture the real laundering mechanism.
@@ -54,19 +43,8 @@ Traditional anomaly detectors focus on isolated edges and miss **structural, tim
 * **Performant:** Supervised models learn interactions between motif proximity and raw features; GNNs exploit neighborhood context for SOTA accuracy.
 * **Robust:** Past-only windows and calibration reduce leakage and overconfidence.
 
-**Suggested library classes/functions (ready to reference)**
-
-* Preprocess: `pandas`, `numpy`, `sklearn.preprocessing.StandardScaler`, `category_encoders.TargetEncoder` (or one-hot via `sklearn.preprocessing.OneHotEncoder`)
-* Clustering: `sklearn.cluster.KMeans`, `sklearn.mixture.GaussianMixture`
-* Distances: `scipy.linalg.cho_factor/cho_solve` for stable Mahalanobis; or `sklearn.covariance.LedoitWolf` for shrinkage Σ
-* Supervised: `sklearn.linear_model.LogisticRegression`, `xgboost.XGBClassifier` / `lightgbm.LGBMClassifier`, `sklearn.calibration.CalibratedClassifierCV`
-* Graph: `torch`, `torch_geometric` (`SAGEConv`, `GINConv`), community TGAT/TGN refs
-* Explainability: `shap.TreeExplainer`, `shap.LinearExplainer`
-* Validation: `sklearn.model_selection.TimeSeriesSplit`
-
 ---
 
-# (Potential) Results and Discussion: Quantitative metrics, goals, and expected results.
 
 ✅ **3+ Quantitative Metrics**
 
@@ -74,7 +52,7 @@ Traditional anomaly detectors focus on isolated edges and miss **structural, tim
 * **Clustering/Representation:** **ARI**, **NMI**, Silhouette (for motif separation).
 * **Compute/Latency:** per-window feature time, per-edge scoring time.
 
-✅ **Project Goals (incl. sustainability & ethics)**
+✅ **Project Goals**
 
 * **Accuracy & Reliability:**
 
@@ -87,10 +65,7 @@ Traditional anomaly detectors focus on isolated edges and miss **structural, tim
   * Minimize investigator burden (**lower FPR**) to reduce unnecessary account holds.
   * Auditability: store motif signatures and SHAP attributions for decisions.
   * **Bias checks:** monitor subgroup FPR/TPR across channels/regions; drop spurious categorical signals if they induce drift or bias.
-* **Sustainability:**
 
-  * Prefer **tabular models** for production scoring (low energy/latency); use GNNs for periodic batch scoring or high-risk queues.
-  * Measure and report **inference energy/time**; prune features that add cost without lift.
 
 ✅ **Expected Results**
 
@@ -98,16 +73,3 @@ Traditional anomaly detectors focus on isolated edges and miss **structural, tim
 * **Detection lift:** Adding motif signature (`p[8]`, hard label `c`) to raw features improves **PR-AUC** notably in the low-FPR regime.
 * **Calibration:** Post-training isotonic/Platt calibration yields **well-calibrated** risk scores (tight reliability curves).
 * **Operational readiness:** Linear-time feature extraction, cached prototypes, and sub-millisecond per-edge scoring for tabular models; GNN used selectively where graph context is essential.
-
----
-
-### Minimal “what goes where” (repo pointers)
-
-* **`/prep/`** temporal windows, graph build
-* **`/features/`** role/temporal/motif cues, encoders
-* **`/prototypes/`** fit `(μ_k, Σ_k)` with shrinkage (e.g., `LedoitWolf`)
-* **`/distance/`** Mahalanobis → softmax (`p[8]`), hard label `c`
-* **`/models/`** `LR`, `GBDT` (XGBoost/LightGBM), `GNN` (SAGE/GIN/TGAT)
-* **`/eval/`** AUROC/PR-AUC, Recall@FPR, ARI/NMI, ECE, SHAP plots
-
-If you want, I can drop this into a ready-to-commit `README.md` and include a `requirements.txt` with the exact packages you plan to use.
