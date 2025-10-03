@@ -79,42 +79,29 @@ Here’s a compact section you can drop into your report. It stays lean to help 
 
 ---
 
-## (5) Project Management & Contributions
+## Project Management & Contributions
 
 ### Gantt Chart (Fall → Spring, responsibilities by member)
 
 **Fall (Weeks 1–14)**
 
-* **W1–2:** Data ingestion, schema audit, leakage checks — **Alireza** (lead), Member2 (support)
-* **W3–4:** Temporal windowing, graph build, EDA — **Member2** (lead), Alireza (review)
-* **W5–6:** Feature set v1 (role/temporal/motif), scaling/encoders — **Member3** (lead)
-* **W7–8:** Prototype fitting (μ, Σ, shrinkage), soft motif scores — **Alireza** (lead)
-* **W9–10:** Tabular baselines (LR/GBDT), imbalance & calibration — **Member2** (lead)
-* **W11–12:** GNN baseline (TGAT/TGN or SAGE), past-only neighborhoods — **Member3** (lead)
-* **W13:** Ablations, SHAP/explanations, reliability curves — **Alireza** (lead)
-* **W14:** Interim report + slides — **All** (Alireza owner)
+* **W1:** Data ingestion— **Alireza** (lead), Member2 (support)
+* **W2:** Temporal windowing, graph build, EDA — **Member2** (lead), Alireza 
+* **W3:** Feature set v1 (role/temporal/motif), scaling/encoders — **Member3** (lead)
+* **W4:** Prototype fitting (μ, Σ, shrinkage), soft motif scores — **Alireza** (lead)
+* **W5:** Tabular baselines (LR/GBDT), imbalance & calibration — **Member2** (lead)
+* **W6:** GNN baseline (TGAT/TGN or SAGE), past-only neighborhoods — **Member3** (lead)
+* **W7:** Ablations, SHAP/explanations, reliability curves — **Alireza** (lead)
+* **W8:** Interim report + slides — **All**
 
-**Spring (Weeks 1–10)**
-
-* **W1–2:** Error analysis, feature v2, prototype retune — **Member2**
-* **W3–4:** Efficiency pass (profiling, caching, batching) — **Member3**
-* **W5–6:** Robustness & bias checks (subgroup FPR/TPR) — **Alireza**
-* **W7–8:** Documentation, repo polish, figs — **All** (Member2 owner)
-* **W9–10:** Final write-up & demo — **All** (Member3 owner)
-
-> Deliverables per milestone: PR with code + brief README; tracked in Issues/Projects. Owners above ensure reviews and weekly status notes.
 
 ### Contribution Table (Proposal stage)
 
 | Name                    | Proposal Contributions                                                                                                                         |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Alireza Kheirandish** | Drafted problem/motivation; designed motif-proximity approach; wrote Methods outline; created evaluation plan and ethics/sustainability notes. |
-| **Member2**             | Spec’d preprocessing pipeline (windows, encoders); selected tabular baselines and calibration plan; organized repo structure.                  |
-| **Member3**             | Planned GNN baseline and leakage controls; defined ablations, visuals (UMAP/SHAP); edited for clarity and word count.                          |
+| **Alireza Kheirandish** | Data investigation, graph generation, feature engineering, unsupervised learning and clustering,  |
+| **Member2**             |              |
+| **Member3**             |                      |
 
-> **Template (edit as needed):**
->
-> * Replace names/roles above.
-> * If a 2-person team, merge W11–12 duties into Member2 or Alireza.
-> * Keep this section concise: bullets + table minimize word usage while satisfying requirements.
+
 
