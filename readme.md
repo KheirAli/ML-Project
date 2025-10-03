@@ -1,107 +1,101 @@
+# Anti-Money Laundering Motif Detection  
+[Proposal Video](https://youtu.be/wMEg9vx8zRo)  
 
-# Problem Definition:
+## Introduction  
+Money laundering is the act of moving illicit funds to conceal their origin and make them appear legitimate. According to the UNODC, the estimated impact of money laundering is 2–5% of global GDP each year [1]. In the U.S. alone, money laundering incidents in FY2024 were 1095, up 45% since FY2020 [2], [3].  
 
-**Problem**
-Detect **fraudulent transactions** in AMLSim logs while revealing *how* they occur via **8 laundering motifs** (fan-out, fan-in, scatter-gather, gather-scatter, simple cycle, random walk, bipartite, stack). Each transaction should receive (i) a **fraud score** and (ii) an **8-dimensional motif-proximity signature** for interpretability.
+Detecting these activities is challenging due to their rarity, adaptability, and the massive volume of legitimate transactions. Machine Learning (ML) offers promise, but real-world datasets are scarce due to privacy and regulatory restrictions [4].  
 
-**Motivation**
-Traditional anomaly detectors focus on isolated edges and miss **structural, time-ordered patterns** of laundering. Compliance teams need **interpretable** alerts (“near fan-in + rapid aggregation”) and **low false-positive rates**. Fields like *credit-card type* or *reinvestment flags* are often weak signals; the **graph+temporal structure** carries the core signal. Our approach integrates **structure-aware, time-windowed features** with **motif proximity** to boost accuracy and explainability.
+## About the Dataset  
+IBM created a synthetic financial dataset (AMLSim) using agent-based simulation [5]. The dataset includes transactions between accounts, amounts, transaction types, timestamps, and account metadata. This enables experimentation with ML methods while protecting privacy.  
+
+## Related Works  
+- **Unsupervised methods:** K-Means, DBSCAN, and ensemble methods such as Random Forest, LightGBM, and XGBoost have been applied to anomaly detection in AML tasks [6].  
+- **Supervised methods:** Graph Neural Networks (GNNs) and autoencoders have been explored for supervised AML detection.  
+- **Gap:** Existing works rarely focus on *motif-level interpretability*, i.e., explaining anomalies through recurring transaction patterns.  
+
+## Problem Definition & Challenge  
+We aim to tag every transaction with its proximity to **8 canonical money-laundering motifs** used in AMLSim:  
+- Fan-out, Fan-in, Scatter-gather, Gather-scatter, Simple cycle, Random walk, Bipartite, Stack  
+
+### Approach  
+- Build a pattern-aware feature vector from ego-networks, amounts, and timing.  
+- Compute an **8-way distance signature** to measure similarity to each motif.  
+- Use signatures for clustering (unsupervised motif discovery) and supervised detection.  
+
+### Challenges  
+- Money laundering is sparse and adaptive.  
+- Overlapping patterns and varying transaction scales.  
+- Need for interpretable, robust, and time-aware detection.  
+
+## Data Preprocessing Methods  
+- **Time-Window Aggregation:** Sliding windows (7–30 days) to capture temporal motifs.  
+- **Robust Scaling:** Prevents domination by outliers in transaction values.  
+- **Class Balancing (SMOTE):** Synthesizes minority-class (laundering) transactions.  
+- **Graph Construction:** Directed time-windowed graphs reveal fan-out/cycle motifs hidden in tabular data.  
+
+## Methods & Why This Works  
+
+### 1. Unsupervised Learning (Motif Discovery)  
+- Construct sliding-window graphs.  
+- Extract role, temporal, and motif-based features.  
+- Compute distance signatures (Mahalanobis distance).  
+- Cluster interactions into motif types.  
+
+**Why effective:** Distances reflect *how* interactions resemble motifs, enabling interpretable clustering.  
+
+### 2. Supervised Learning (Laundering Detection with Motif Priors)  
+- Input vector: raw features + distance signatures + motif cluster labels.  
+- Models: Logistic regression, Gradient Boosted Trees, optional GNNs.  
+- Explainability: SHAP values highlight motif proximity and transaction features.  
+
+**Why effective:** Combines anomaly detection with motif interpretability, improving recall while controlling false positives.  
+
+## Deliverables  
+- Feature vectors, motif distance signatures, cluster labels.  
+- Clustering metrics (ARI/NMI).  
+- Detection metrics (AUROC/PR-AUC).  
+- Visualizations of motif separation.  
+- Explanations for alerts (“near-fan-out + bursty micro-amounts”).  
+
+## Engineering Outline  
+```
+/prep/        Graph builder + windowing
+/features/    Role/temporal/motif extractors
+/prototypes/  Fit & store motif prototypes
+/distance/    Compute d, p, c per interaction
+/models/      Train/eval detectors, calibration, SHAP
+/eval/        Clustering metrics & detection metrics
+```  
+
+## Expectations  
+- **Pattern separation:** Coherent motif clusters with strong ARI/NMI.  
+- **Detection lift:** Higher AUROC/PR-AUC with motif features.  
+- **Interpretability:** Alerts with motif-based rationales.  
+- **Generalization:** Robust performance across varying laundering rates.  
+
+## Gantt Chart  
+[Project Timeline](https://gtvault-my.sharepoint.com/:x:/g/personal/akothapalli31_gatech_edu/EZAg5U5raNFDgFohfCuoDvoBeR2CBnpRpG5yfuF6GvvYyQ?e=nCkaWJ)  
+
+## Contribution Table  
+
+| Name              | Proposal Contribution                                                                 |
+|-------------------|----------------------------------------------------------------------------------------|
+| **Alireza Kheirandish** | Data investigation, graph generation, feature engineering, unsupervised learning, clustering |
+| **Akhil Kothapalli**    | Motif feature extraction, unsupervised learning & clustering, metrics gathering               |  
 
 ---
 
-# Methods:
+## References  
+[1] UNODC, “Model Laundering.” [Online]. Available: https://www.unodc.org/unodc/en/money-laundering/overview.html. [Accessed: Sept. 30, 2025].  
 
-**Data Preprocessing Methods Identified**
+[2] United States Sentencing Commission (USSC), “Money Laundering Quick Facts.” [Online]. Available: https://www.ussc.gov/research/quick-facts/money-laundering. [Accessed: Sept. 30, 2025].  
 
-1. **Temporal windowing & leakage control:** build past-only sliding windows (e.g., 7–30 days) to compute features without future leakage.
-2. **Graph construction:** directed multigraph of accounts (nodes) and transactions (edges); 1–2-hop ego-nets per edge.
-3. **Feature engineering:**
+[3] U.S. Sentencing Commission, “Laundering of Monetary Instruments; Engaging in Monetary Transactions in Property Derived from Unlawful Activity.”  
 
-   * Topology/role stats (in/out-degree, unique counterparties, entropy), temporal gaps/burstiness, short cycles, fan ratios, path-continuation likelihood.
-   * **Aux categorical encoding** (credit-card/reinvestment) via NLP embeddinga.
-4. **Scaling & regularization:** Standardize continuous features (e.g., `sklearn.preprocessing.StandardScaler`), shrinkage on covariance for distance models.
-5. **Class imbalance handling:** weighted loss or focal loss; stratified time splits.
+[4] V. K. Potluru, Y. Sun, J. Song, and L. Zhao, “Synthetic Data Applications in Finance,” *arXiv preprint* arXiv:2401.00081, 2023.  
 
-**ML Algorithms/Models Identified**
+[5] E. Altman, J. Blanuša, L. von Niederhäusern, B. Egressy, A. Anghel, and K. Atasu, “Realistic Synthetic Financial Transactions for Anti-Money Laundering Models,” *arXiv preprint* arXiv:2306.16424, 2023. [Online]. Available: https://arxiv.org/abs/2306.16424  
 
-* **Unsupervised / Representation**
-
-  * **Prototype distances (Mahalanobis w/ shrinkage):** per-motif ((\mu_k,\Sigma_k)) → softmax over distances. (`numpy/scipy` for covariance; custom light wrapper)
-  * **K-Means / GMM** for constrained clustering of motif prototypes. (`sklearn.cluster.KMeans`, `sklearn.mixture.GaussianMixture`)
-* **Supervised (Tabular)**
-
-  * **Logistic Regression** with calibration. (`sklearn.linear_model.LogisticRegression` + `sklearn.isotonic.IsotonicRegression` or `sklearn.calibration.CalibratedClassifierCV`)
-  * **Gradient-Boosted Trees** (XGBoost/LightGBM). (`xgboost.XGBClassifier` / `lightgbm.LGBMClassifier`)
-* **Graph-Native (Supervised)**
-
-  * **GNN baselines** for edge classification with temporal context: GraphSAGE/GIN; **temporal GNNs** (TGAT/TGN). (`pyg`/PyTorch Geometric: `torch_geometric.nn.SAGEConv`, `GINConv`; TGAT/TGN implementations)
-
-**Why this is effective**
-
-* **Structure-aware:** Graph+temporal features capture the real laundering mechanism.
-* **Interpretable:** 8-way motif proximity explains *why* a transaction is suspicious.
-* **Performant:** Supervised models learn interactions between motif proximity and raw features; GNNs exploit neighborhood context for SOTA accuracy.
-* **Robust:** Past-only windows and calibration reduce leakage and overconfidence.
-
----
-
-
-**Quantitative Metrics**
-
-* **Detection:** AUROC, **Average Precision (PR-AUC)**, **Recall@FPR=1%** (ops-friendly), F1, **Brier score** + **Expected Calibration Error (ECE)**.
-* **Clustering/Representation:** **ARI**, **NMI**, Silhouette (for motif separation).
-* **Compute/Latency:** per-window feature time, per-edge scoring time.
-
-**Project Goals**
-
-* **Accuracy & Reliability:**
-
-  * +3–7 **AUROC** points vs. raw-features baseline;
-  * **+5–10% Recall@FPR=1%**;
-  * **ECE ≤ 0.05** after calibration for trustworthy probabilities.
-* **Interpretability:** Every alert includes motif rationale (e.g., “fan-in proximity 0.81 + rapid aggregation”).
-* **Ethics & governance:**
-
-  * Minimize investigator burden (**lower FPR**) to reduce unnecessary account holds.
-  * Auditability: store motif signatures and SHAP attributions for decisions.
-  * **Bias checks:** monitor subgroup FPR/TPR across channels/regions; drop spurious categorical signals if they induce drift or bias.
-
-
-**Expected Results**
-
-* **Motif separation:** ARI/NMI ≫ random; clear UMAP clusters in distance/signature space.
-* **Detection lift:** Adding motif signature (`p[8]`, hard label `c`) to raw features improves **PR-AUC** notably in the low-FPR regime.
-* **Calibration:** Post-training isotonic/Platt calibration yields **well-calibrated** risk scores (tight reliability curves).
-* **Operational readiness:** Linear-time feature extraction, cached prototypes, and sub-millisecond per-edge scoring for tabular models; GNN used selectively where graph context is essential.
-
-
-Here’s a compact section you can drop into your report. It stays lean to help you fit under the 800-word cap.
-
----
-
-## Project Management & Contributions
-
-### Gantt Chart (Fall → Spring, responsibilities by member)
-
-**Fall (Weeks 1–14)**
-
-* **W1:** Data ingestion— **Alireza** (lead), Member2 (support)
-* **W2:** Temporal windowing, graph build, EDA — **Member2** (lead), Alireza 
-* **W3:** Feature set v1 (role/temporal/motif), scaling/encoders — **Member3** (lead)
-* **W4:** Prototype fitting (μ, Σ, shrinkage), soft motif scores — **Alireza** (lead)
-* **W5:** Tabular baselines (LR/GBDT), imbalance & calibration — **Member2** (lead)
-* **W6:** GNN baseline (TGAT/TGN or SAGE), past-only neighborhoods — **Member3** (lead)
-* **W7:** Ablations, SHAP/explanations, reliability curves — **Alireza** (lead)
-* **W8:** Interim report + slides — **All**
-
-
-### Contribution Table (Proposal stage)
-
-| Name                    | Proposal Contributions                                                                                                                         |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Alireza Kheirandish** | Data investigation, graph generation, feature engineering, unsupervised learning and clustering,  |
-| **Member2**             |              |
-| **Member3**             |                      |
-
-
+[6] F. Gómez Mármol and G. Martínez Pérez, “Anti-Money Laundering Recognition through the Gradient Boosting Classifier,” *ResearchGate*, 2021. [Online]. Available: https://www.researchgate.net/publication/354776829_Anti-Money_Laundering_Recognition_through_the_Gradient_Boosting_Classifier  
 
